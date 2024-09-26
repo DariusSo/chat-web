@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
+import ChatWindow from "./ChatWindow";
 
 const ChatroomSelect = () => {
   // State to handle the new chatroom input and selected chatroom
   const [newChatroomName, setNewChatroomName] = useState("");
   const [selectedChatroom, setSelectedChatroom] = useState("");
   const [created, setCreated] = useState(false);
+  const [conected, setConnected] = useState(true);
 
   // Example list of chatrooms (fetched from a server in a real app)
   const [chatrooms, setChatrooms] = useState([]);
@@ -30,6 +32,8 @@ const ChatroomSelect = () => {
 }, []);
 
   return (
+    <>
+    {conected ? <ChatWindow/> : 
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
         <h2 className="text-2xl font-bold mb-6 text-center">Select or create a chatroom</h2>
@@ -95,6 +99,8 @@ const ChatroomSelect = () => {
         </button>
       </div>
     </div>
+    }
+    </>
   );
 };
 function getCookie(name) {
