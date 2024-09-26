@@ -1,11 +1,21 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import registration, { login } from "../modules/LoginAndRegistration";
+import ChatroomSelect from "./ChatroomSelect";
 
 const RegistrationForm = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [chatrroms, setChatrooms] = useState([]);
+  useEffect(() => {
+    if(getCookie("loggedIn")){
+      setIsLoggedIn(true);
+    }
+  })
 
   return (
+    <>
+    {isLoggedIn ? <ChatroomSelect/> : 
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
         <h2 className="text-2xl font-bold mb-6 text-center">Register</h2>
@@ -56,8 +66,23 @@ const RegistrationForm = () => {
         </form>
       </div>
     </div>
+    }
+    </>
   );
 };
+
+function getCookie(name) {
+  let nameEQ = name + "=";
+  let ca = document.cookie.split(';');
+  for(let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+      if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+  }
+  return null;
+}
+
+
 
 
 
