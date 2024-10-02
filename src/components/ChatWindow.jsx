@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useReducer } from "react";
 
 // Function to simulate message timestamps
 const formatDate = () => {
@@ -6,55 +6,25 @@ const formatDate = () => {
   return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
-const ChatWindow = () => {
+const ChatWindow = ({sendMessage, chatWindowRef, currentUser, setCurrentUser, selectedChatroom, users, setUsers, leave, messages, setMessages}) => {
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([]);
   const [connected, setConnected] = useState(true); // Represents if the user is connected
-  const [users, setUsers] = useState(["Alice", "Bob", "Charlie"]); // Simulated user list
+  const [, forceUpdate] = useReducer(x => x + 1, 0);
 
-  const currentUser = "You"; // Simulated current user name
-
-  // Simulate the user connecting on load
   useEffect(() => {
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      { type: "notification", text: "You connected to the chat!" },
-    ]);
+    const headers = { 'Authorization': 'Bearer ' + getCookie("loggedIn") };
+    fetch("http://localhost:8080/messages/chatroom?chatroom=" + selectedChatroom, { headers })
+    .then(response => response.json())
+    .then(data => setMessages(data));
   }, []);
-
+  
   // Handle sending a message
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (message.trim() === "") return; // Don't send empty messages
-
-    const newMessage = {
-      type: "user",
-      user: currentUser,
-      text: message,
-      time: formatDate(), // Add timestamp to message
-    };
-
-    // Update the messages state with the new message
-    setMessages((prevMessages) => [...prevMessages, newMessage]);
-    setMessage(""); // Clear the input field
-  };
-
-  // Handle disconnection
-  const handleDisconnect = () => {
-    setConnected(false);
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      { type: "notification", text: "You disconnected from the chat." },
-    ]);
-  };
-
-  // Handle reconnection
-  const handleReconnect = () => {
-    setConnected(true);
-    setMessages((prevMessages) => [
-      ...prevMessages,
-      { type: "notification", text: "You reconnected to the chat." },
-    ]);
+    sendMessage(message, currentUser, selectedChatroom, "user");
+    setMessage("");
+    
   };
 
   return (
@@ -82,43 +52,44 @@ const ChatWindow = () => {
           <h2 className="text-2xl font-bold text-gray-700 mb-6">Chatroom</h2>
 
           {/* Messages Window */}
-          <div className="bg-gray-50 border rounded-lg h-96 mb-6 p-4 overflow-y-auto">
+          <div ref={chatWindowRef} className="bg-gray-50 border rounded-lg h-96 mb-6 p-4 overflow-y-auto">
             {messages.map((msg, index) => (
               <div
                 key={index}
                 className={`mb-4 ${
-                  msg.type === "notification"
+                  msg.type == "system"
                     ? "text-sm text-gray-500 italic text-center mx-auto"
-                    : msg.user === currentUser
+                    : msg.username == currentUser
                     ? "ml-auto text-right"
                     : "mr-auto text-left"
                 } max-w-xs sm:max-w-sm`}
               >
                 {/* Username and Timestamp */}
-                {msg.user && (
+                {}
+                {msg.type == "system" ? ("") : (
                   <div className="text-xs text-gray-500 mb-1">
-                    <span className="font-semibold">{msg.user}</span> · {msg.time}
+                    {msg.username} · <span className="font-semibold">{msg.sentAt}</span>
                   </div>
                 )}
 
                 {/* Message Content */}
                 <div
                   className={`p-3 rounded-lg ${
-                    msg.type === "notification"
+                    msg.type == "system"
                       ? ""
-                      : msg.user === currentUser
+                      : msg.username == currentUser
                       ? "bg-blue-500 text-white"
                       : "bg-gray-300 text-gray-700"
                   }`}
                 >
-                  {msg.text}
+                  {msg.content}
                 </div>
               </div>
             ))}
           </div>
 
           {/* Message Input Section */}
-          {connected ? (
+          
             <form onSubmit={handleSendMessage} className="flex items-center space-x-3">
               <input
                 type="text"
@@ -135,26 +106,25 @@ const ChatWindow = () => {
               </button>
               <button
                 className="bg-red-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-red-600 transition duration-300"
-                onClick={handleDisconnect}
+                onClick={() => {leave(currentUser, setConnected, selectedChatroom); forceUpdate();}}
               >
                 Disconnect
               </button>
             </form>
-          ) : (
-            <div className="flex justify-between mt-6">
-              <p className="text-center text-red-500">You are disconnected.</p>
-              <button
-                className="bg-green-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-green-600 transition duration-300"
-                onClick={handleReconnect}
-              >
-                Reconnect
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>
   );
 };
+function getCookie(name) {
+  let nameEQ = name + "=";
+  let ca = document.cookie.split(';');
+  for(let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+      if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+  }
+  return null;
+}
 
 export default ChatWindow;
